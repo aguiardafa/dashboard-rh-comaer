@@ -1,47 +1,25 @@
 # Importando as bibliotecas necessárias para o projeto
 import pandas as pd
 
-from database import connection
-
-# variáveis globais
-
-# criando conexão com banco de dados
-cnx = connection.conectar_com_banco('producao')
 
 # OBTENDO OS DADOS DO PAINEL 1
-# Lendo toda a tabela view_tp_sisceab_atual e transformando em DataFrame.
-dfTpAtual = pd.read_sql_table('view_tp_sisceab_atual', cnx)
-# Lendo toda a tabela view_tp_sisceab e transformando em DataFrame.
-dfTpHist = pd.read_sql_table('view_tp_sisceab', cnx)
+# Lendo toda a tabela TP_COMGAP e transformando em DataFrame.
+dfTpHist = pd.read_csv('./database/TP COMGAP 2015 a 2021.csv')
 
-dictUnidadeComando = dfTpAtual[['UNIDADE', 'COMANDO']].sort_values('UNIDADE', ascending=True)\
-    .drop_duplicates('UNIDADE').set_index('UNIDADE').T.to_dict('list')
-
-# preencher COMANDO na TP HIST
-for index, i in dfTpHist.iterrows():
-    unidade = dfTpHist.loc[index, 'UNIDADE']
-    comando = dictUnidadeComando.get(unidade, [unidade])
-    if comando is not None and comando != '' and comando != []:
-        dfTpHist.loc[index, 'COMANDO'] = comando[0]
-    else:
-        dfTpHist.loc[index, 'COMANDO'] = unidade
-
-# OBTENDO OS DADOS DO PAINEL 2
-# Lendo toda a tabela view_solicitamovi e transformando em DataFrame.
-dfSolicitaMov = pd.read_sql_table('view_solicitamovi', cnx)
-# Lendo toda a tabela view_entrada_saida e transformando em DataFrame.
-dfEntradaSaida = pd.read_sql_table('view_entrada_saida', cnx)
 
 # OBTENDO OS DADOS DOS FILTROS
 # DropDown OM
-# Lendo toda a tabela view_organizacoes_decea e transformando em DataFrame.
-dfOrganizacoes = pd.read_sql_table('view_organizacoes_decea', cnx,
-                                   columns=['UNIDADE', 'Codigo_Unidade', 'COMANDO', 'Codigo_Comando'])
+# Lendo a coluna UNIDADE e transformando em DataFrame.
+dfOrganizacoes = dfTpHist.sort_values('UNIDADE', ascending=True).drop_duplicates('UNIDADE').UNIDADE
 # DropDown POSTO
-dfPosto = pd.read_sql_table('petp', cnx)
+dfPosto = dfTpHist.sort_values('POSTO', ascending=True).drop_duplicates('POSTO').POSTO
 # DropDown QUADRO
-dfQuadro = pd.read_sql_table('petq', cnx)
+dfQuadro = dfTpHist.sort_values('QUADRO', ascending=True).drop_duplicates('QUADRO').QUADRO
 # DropDown ESPECIALIDADE
-dfEsp = pd.read_sql_table('petesp', cnx)
+dfEsp = dfTpHist.sort_values('ESPEC', ascending=True).drop_duplicates('ESPEC').ESPEC
 # DropDown AREAS
-dfAreas = dfTpAtual.sort_values('COMANDO', ascending=True).drop_duplicates('COMANDO').COMANDO
+dfAreas = dfTpHist.sort_values('COMANDO', ascending=True).drop_duplicates('COMANDO').COMANDO
+# DropDown ODGSA
+dfODGSA = dfTpHist.sort_values('ODGSA', ascending=True).drop_duplicates('ODGSA').ODGSA
+# DropDown ANO
+dfAno = dfTpHist.sort_values('ANO', ascending=False).drop_duplicates('ANO').ANO
