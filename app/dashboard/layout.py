@@ -2,17 +2,18 @@
 import dash_bootstrap_components as dbc
 import dash_html_components as html
 
-from dashboard import tab1, tab2
+from dashboard import tab1
 
 # MONTAGEM GERAL DO DASHBOARD
 layout = dbc.Jumbotron(children=[
     dbc.Row(  # CARDS EM LINHA
         [
-            html.Div([html.Img(src='/assets/logo.png')], style={'padding-right': '15px'}),
+            html.Div([html.Img(src='/assets/logo_comgap.png', height='100px', width='84px')],
+                     style={'padding-right': '15px', 'padding-top': '15px'}),
             dbc.Col([
-                html.H1(children='Comando da Aeronáutica',
+                html.H1(children='Comando-Geral de Apoio (COMGAP)',
                         style={'textAlign': 'left'}, className="display-4"),
-                html.P("Dashboard das informações de Recursos Humanos do COMAER", className="lead")
+                html.P("Dashboard das informações de Recursos Humanos do COMGAP", className="lead")
                 ]
             )
         ],

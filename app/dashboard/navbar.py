@@ -15,7 +15,7 @@ def Navbar():
                 label="More",
             ),
         ],
-        brand="Comando da Aeronáutica (COMAER)",
+        brand="Indicadores de Recursos Humanos do Comando-Geral de Apoio (COMGAP)",
         color="primary",
         dark=True,
     )
