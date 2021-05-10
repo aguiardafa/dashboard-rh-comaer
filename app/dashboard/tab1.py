@@ -14,18 +14,19 @@ import pandas as pd
 from math import ceil
 
 # variáveis para construção do PAINEL 1
-dfOrganizacoesDropDown = transforms.dfOrganizacoes.sort_values(['UNIDADE']).UNIDADE
-dfPostosDropDown = transforms.dfPosto.sort_values(['ORDEM']).POSTO
-dfQuadrosDropDown = transforms.dfQuadro.sort_values(['CODQ']).QUADRO
-dfEspecialidadeDropDown = transforms.dfEsp.sort_values(['ESPEC']).ESPEC
+dfOrganizacoesDropDown = transforms.dfOrganizacoes.tolist()
+dfPostosDropDown = transforms.dfPosto.tolist()
+dfQuadrosDropDown = transforms.dfQuadro.tolist()
+dfEspecialidadeDropDown = transforms.dfEsp.tolist()
 dfAreasDropDown = transforms.dfAreas.tolist()
+dfAnosDropDown = transforms.dfAno.tolist()
 
 # variaveis de dados construção do PAINEL 1
-dfTpAtual = transforms.dfTpAtual
-dfTpAtual = dfTpAtual.fillna("-")  # Substituindo registro nulos por "-"
-dfTpAtual.replace('', '-', inplace=True)  # Substituindo registro vazio por "-"
 dfTpHist = transforms.dfTpHist
-ano_atual = int(dfTpAtual.iloc[0]['ANO_ATUAL'])
+dfTpHist = dfTpHist.fillna("-")  # Substituindo registro nulos por "-"
+dfTpHist.replace('', '-', inplace=True)  # Substituindo registro vazio por "-"
+
+ano_atual = int(dfAnosDropDown[0])
 ano_anterior = ano_atual - 1
 
 # variáveis para construção da TABELA do PAINEL 1
@@ -292,10 +293,11 @@ tab1_content = dbc.Card(
      ])
 def update_data_painel_1(input_area_value, input_om_value,
                          input_posto_value, input_quadro_value, input_especialidade_value):
-    filtered_df_tp_atual = dfTpAtual
-    filtered_df_tp_hist = dfTpHist
+    dfTpAtual = dfTpHist[dfTpHist['ANO'] == ano_atual]
+    filtered_df_tp_atual = dfTpHist[dfTpHist['ANO'] == ano_atual]
+    filtered_df_tp_hist = dfTpHist[dfTpHist['ANO'] != ano_atual]
 
-    x_label = [f'COMAER {ano_atual}']
+    x_label = [f'COMGAP {ano_atual}']
     # filtrando DF pela AREA
     if input_area_value is not None and input_area_value != '' and input_area_value != []:
         filtered_df_tp_atual = filtered_df_tp_atual.loc[filtered_df_tp_atual['COMANDO'].isin(input_area_value)]
@@ -345,18 +347,18 @@ def update_data_painel_1(input_area_value, input_om_value,
         indice_efetivo_ativo = 0
         indice_efetivo_ativo_ttc = 0
         indice_efetivo_ativo_ttc_cv = 0
-    # Montar totalizadores HISTORICOS das TP do SISCEAB com a TP ATUAL
+    # Montar totalizadores HISTORICOS das TP do COMGAP com a TP ATUAL
     df_totais_hist = filtered_df_tp_hist.groupby('ANO', as_index=False).sum()
     df_totais_hist_atual = pd.DataFrame(
         [(ano_atual, total_tp_atual, total_existe_ativo, total_existe_ttc, total_existe_civil, total_proposto)],
-        columns=['ANO', 'TP', 'EXISTENTE', 'EXISTTTC', 'EXISTCIVIL', 'PROPOSTO'])
+        columns=['ANO', 'TP_ANO_ATUAL', 'EXISTENTE', 'EXI_PTTC', 'EXISTCIVIL', 'PROPOSTO'])
     df_totais_hist_atual = df_totais_hist_atual.append(
         df_totais_hist.sort_values(by='ANO', ascending=False), ignore_index=True)
     # calcular indices da TP ANO ANTERIOR
     df_totais_ano_anterior = df_totais_hist_atual[df_totais_hist_atual['ANO'] == ano_anterior]
     total_existe_ativo_ano_anterior = int(df_totais_ano_anterior.EXISTENTE)
-    total_tp_atual_ano_anterior = int(df_totais_ano_anterior.TP)
-    total_efetivo_ativo_ttc_ano_anterior = int(df_totais_ano_anterior.EXISTENTE + df_totais_ano_anterior.EXISTTTC)
+    total_tp_atual_ano_anterior = int(df_totais_ano_anterior.TP_ANO_ATUAL)
+    total_efetivo_ativo_ttc_ano_anterior = int(df_totais_ano_anterior.EXISTENTE + df_totais_ano_anterior.EXI_PTTC)
     total_efetivo_ativo_ttc_cv_ano_anterior = \
         int(total_efetivo_ativo_ttc_ano_anterior + df_totais_ano_anterior.EXISTCIVIL)
     if total_tp_atual > 0:
@@ -418,7 +420,7 @@ def update_data_painel_1(input_area_value, input_om_value,
                        f'{indice_efetivo_ativo:.1f}%</span><br>'
                        f'<span style="color:#808080"><b>Taxa do Efetivo Ativo + PTTC:</b> '
                        f'{indice_efetivo_ativo_ttc:.1f}%</span><br>'
-                       f'<span style="color:#244e76"><b>Taxa da Força de Trabalho (Ativo + PTTC + Cv):</b> '
+                       f'<span style="color:#244e76"><b>Taxa da Força de Trabalho<br>(Ativo + PTTC + Cv):</b> '
                        f'{indice_efetivo_ativo_ttc_cv:.1f}%</span>',
                'font': {'size': 14}},
         domain={'x': [0, 1], 'y': [0, 1]},
@@ -460,18 +462,18 @@ def update_data_painel_1(input_area_value, input_om_value,
     trace_line_proposta = go.Scatter(x=df_totais_hist_atual.ANO, y=df_totais_hist_atual.PROPOSTO,
                                      name='TP Proposta', mode='markers+lines+text', marker={'color': '#00CC96'},
                                      textposition='bottom center', text=df_totais_hist_atual.PROPOSTO, hoverinfo='text',
-                                     textfont=dict(color="#00CC96"))
-    trace_line_tp = go.Scatter(x=df_totais_hist_atual.ANO, y=df_totais_hist_atual.TP,
+                                     textfont=dict(color="#00CC96"), visible='legendonly')
+    trace_line_tp = go.Scatter(x=df_totais_hist_atual.ANO, y=df_totais_hist_atual.TP_ANO_ATUAL,
                                name='TP', mode='markers+lines+text', marker={'color': '#000000'},
-                               textposition='bottom center', text=df_totais_hist_atual.TP, hoverinfo='text',
+                               textposition='bottom center', text=df_totais_hist_atual.TP_ANO_ATUAL, hoverinfo='text',
                                textfont=dict(color="#000000"))
     trace_line_ativo = go.Scatter(x=df_totais_hist_atual.ANO, y=df_totais_hist_atual.EXISTENTE,
                                   name='Efetivo Ativo', mode='markers+lines+text', marker={'color': '#3587FA'},
                                   textposition='bottom center', text=df_totais_hist_atual.EXISTENTE, hoverinfo='text',
                                   textfont=dict(color="#3587FA"))
-    trace_line_ttc = go.Scatter(x=df_totais_hist_atual.ANO, y=df_totais_hist_atual.EXISTTTC,
+    trace_line_ttc = go.Scatter(x=df_totais_hist_atual.ANO, y=df_totais_hist_atual.EXI_PTTC,
                                 name='Efetivo PTTC', mode='markers+lines+text', marker={'color': '#808080'},
-                                textposition='bottom center', text=df_totais_hist_atual.EXISTTTC, hoverinfo='text',
+                                textposition='bottom center', text=df_totais_hist_atual.EXI_PTTC, hoverinfo='text',
                                 textfont=dict(color="#808080"))
     trace_line_cv = go.Scatter(x=df_totais_hist_atual.ANO, y=df_totais_hist_atual.EXISTCIVIL,
                                name='Efetivo Civil', mode='markers+lines+text', marker={'color': '#ff7f0e'},
@@ -554,7 +556,7 @@ def update_data_painel_1(input_area_value, input_om_value,
     trace_bar_dif_ativo_tcc_cv_om = go.Bar(x=df_atual_om.UNIDADE,
                                            y=((df_atual_om.EXISTENTE + df_atual_om.EXI_PTTC + df_atual_om.EXISTCIVIL) - df_atual_om.TP_ANO_ATUAL),
                                            name='Força Trabalho (Ativo + PTTC + Civil)',
-                                           marker={'color': '#244e76'})
+                                           marker={'color': '#244e76'}, visible='legendonly')
     # Armazenando as Barras em uma lista
     data_dif_om = [trace_bar_dif_ativo_om, trace_bar_dif_ativo_tcc_cv_om]
     # Criando Layout
@@ -636,7 +638,7 @@ def update_data_painel_1(input_area_value, input_om_value,
     # GRAFICO - barras Taxa de Ocupação POR ÁREA
     df_atual_area = df_totais_atual_por_area
     df_atual_area['META'] = indice_efetivo_ativo_sem_filtro
-    label_meta = f'Meta em {indice_efetivo_ativo_sem_filtro:.1f}% - Taxa de Ocupação SISCEAB {ano_atual}'
+    label_meta = f'Meta em {indice_efetivo_ativo_sem_filtro:.1f}% - Taxa de Ocupação COMGAP {ano_atual}'
     trace_line_meta = go.Scatter(x=df_atual_area.COMANDO,
                                  y=df_atual_area.META, name='Meta Taxa de Ocupação',
                                  mode='markers+lines', marker={'color': '#FF0000', 'size': 4},
@@ -665,7 +667,7 @@ def update_data_painel_1(input_area_value, input_om_value,
                                             (((df_atual_area.EXISTENTE + df_atual_area.EXI_PTTC + df_atual_area.EXISTCIVIL) /
                                             df_atual_area.TP_ANO_ATUAL) * 100), 1
                                         ),
-                                        marker={'color': '#244e76'}, hoverinfo='text')
+                                        marker={'color': '#244e76'}, hoverinfo='text', visible='legendonly')
     # Armazenando as Barras em uma lista
     data_taxa_area = [trace_bar_taxa_ativo_area, trace_line_taxa_forca_trab, trace_line_meta]
     # Criando Layout
@@ -731,7 +733,7 @@ def split_filter_part(filter_part):
     Input('datatable-paging', 'filter_query'))
 def update_table(input_area_value, input_om_value, input_posto_value, input_quadro_value, input_especialidade_value,
                  page_current, page_size, sort_by, filter):
-    filtered_df_tp_atual = dfTpAtual
+    filtered_df_tp_atual = dfTpHist[dfTpHist['ANO'] == ano_atual]
 
     # filtrando DF pela AREA
     if input_area_value is not None and input_area_value != '' and input_area_value != []:
@@ -750,7 +752,6 @@ def update_table(input_area_value, input_om_value, input_posto_value, input_quad
         filtered_df_tp_atual = filtered_df_tp_atual.loc[filtered_df_tp_atual['ESPEC'].isin(input_especialidade_value)]
 
     # adequando df para exibição na tabela
-    filtered_df_tp_atual = filtered_df_tp_atual.sort_values(['Codigo_do_Posto'])
     filtered_df_tp_atual.insert(0, "indice", range(1, len(filtered_df_tp_atual) + 1), True)
     dff = filtered_df_tp_atual
     # criar coluna status
